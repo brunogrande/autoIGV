@@ -51,14 +51,14 @@ def checkargs():  #subroutine for validating commandline arguments
             usage("Specified imaging mode must be either 1, 2, or 3.")
             quit()
     if not args.file:  #if the args.file value is null, give an error message and quit the program
-        usage("No file specified.") 
+        usage("No file specified.")
         quit()
     elif not os.path.isfile(args.file):  #if the file specified in the arguments doesn't exist, quit the program and give an error message
-        usage("Could not locate " + args.file + "on this system.") 
+        usage("Could not locate " + args.file + "on this system.")
         quit()
     else:
         return (args.file, directory, prefsfile, genome, host, port, mode, nocollapse)  #returns the validated filename and directory to the main program
-    
+
 def filenamesfree(directory):  #this subroutine checks if the series of filenames we are likely to need is free
     import os  #imports the library we will need to check filenames in the directory
     if os.path.isdir(directory):  #checks each potential output filename as the loop iterates
@@ -92,7 +92,7 @@ def createsavedir(directory):
             print ('\nUnable to make the directory ' + directory + '.')
             return False
         return directory  #and returns the directory name to the main subroutine
-    
+
 def clean(line, badbams):  #this subroutine cleans up the line and makes sure it looks somewhat usable (starts with a genomic locus followed by a tab)
     import re  #we need this library to do a regex
     line = line.strip('\r\n\t ') #removes any leading or trailing endlines, spaces, and tabs
@@ -117,14 +117,14 @@ def usage(sin):  #This subroutine prints directions
     print ('The -f (file) is a necessary commandline argument.  The -d (directory) is optional, as this script has a default.')
     print ('The -m argument can be used to automate the runs (such as for a bash script) and can take an argument of 1, 2, or 3.')
     print ('\t1. All files at once for the line.\n\t2. One file at a time at each locus.\n\t3. Both.')
-    
+
 def connect(host, port):  #this subroutine creates the connection between the script and IGV
     import socket  #the library needed for the low-level network connection
     igv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  #creates a socket object called IGV
-    igv.settimeout(20)  #sets IGV to give a timeout error if a command goes unresponded to for more than 20 seconds
-    print('Attempting to establish a connecting with IGV...', end = '')  
+    igv.settimeout(30)  #sets IGV to give a timeout error if a command goes unresponded to for more than 20 seconds
+    print('Attempting to establish a connecting with IGV...', end = '')
     try:  #this statement contains an action that could cause a non-fatal exception to occur
-        igv.connect((host, port))  #actually creates the connection with IGV on the local system
+        igv.connect((host, int(port)))  #actually creates the connection with IGV on the local system
     except ConnectionRefusedError: #if the connection is refused (likely because IGV is not open or configured to allow connections).  This handles that exception mentioned above
         usage('Unable to connect to IGV.  Be sure that IGV is running and configured to accept connections on its default port (60151)')  #prints an error message
         quit() #and quits the program more gracefully than an unhandled exception
@@ -276,7 +276,7 @@ def await(igv, expectedresponse = ''):  #the second argument here is optional, a
             usage('IGV returned an unexpected response to a test command.')  #if not, displays an error message
             igv.close()
             quit()
-                
+
 def bamfile(filename): #checks the validity of the entered bam file
     import re
     if not fileexists(filename):  #checks to be sure the file exists
@@ -285,10 +285,11 @@ def bamfile(filename): #checks the validity of the entered bam file
 
 def fileexists(filename):  #subroutine to confirm that a file exists
     import os
-    test = os.path.isfile(filename)  #sets test to the boolean of if the file exists 
+    test = os.path.isfile(filename)  #sets test to the boolean of if the file exists
     return test  #and returns that boolean value
 
 def wellformed(locus):  #subroutine to make sure that the locus looks like a locus
+    return True
     import re
     foundlocus = re.match('(1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|X|x|Y|y|mt|MT|Mt)(\:\d+)', locus)  #a regex that will capture a cromosome (1-22 or X or Y or mt)
     if foundlocus:  #if it found something that looked like a locus
@@ -298,14 +299,14 @@ def wellformed(locus):  #subroutine to make sure that the locus looks like a loc
 
 def multibamlist(list, badbams):  #function for looking through several lines to see if they have multiple bam files listed
     for line in list: #creates a loop throught he lines
-        line = line.split('\t')
+        line = line.rstrip().split('\t')
         if multibam(line, badbams, True): #runs the multibam test for each line individually
             return True  #returns true if any of them are multibams
     else:
         return False #returns false if none of them are
 
 def multibam(line, badbams, testonly = False):  #function for testing a single line to see if multiple valid bam files are listed
-    bamfiles = 0  
+    bamfiles = 0
     for i in range(0,len(line)):  #sets up a loop to iterate through the elements on the line
         if i == 0:  #if we are looking at the first element (should be a genomic locus)
             if testonly: #this block is only engaged when we are parsing the whole file at once to determine if there are any line with multiple bam files.  During the actual run, bad loci will be handled in the main subroutine in order to return an error message.
@@ -361,8 +362,8 @@ def yesanswer(question):  #asks the question passed in and returns True if the a
         else: #if the answer is not a value indicating a yes or no
             print ('Invalid response.')
             answer = False #set ansewr to false so the loop will continue until a satisfactory answer is given
-    
-def loadprefs(prefsfile): 
+
+def loadprefs(prefsfile):
     import os
     if prefsfile:  #if a preferences file is already specified (because the user specified one on the command line)
         prefslist = parseprefs(prefsfile)  #try to load the user-specified prefs file
@@ -383,14 +384,14 @@ def loadprefs(prefsfile):
             print('\nUnable to load preferences from default file, the file might be corrupt.')
             quit('Please delete or repair the default preferences file (autoIGVprefs.ini) and restart this program.')  #other option would be to have the program delete the file and keep going, but it is safer to have the user delete the prefs file themselves
         else:  #if no default preferences file was found
-            print('\nNo preferences file found.') 
+            print('\nNo preferences file found.')
             makeprefsfile(prefsfile)  #run the subroutine to make the preferences file
             prefslist = parseprefs(prefsfile)  #load the preferences from that file
             if prefslist:  #make sure we loaded a good list of preferences
                 return prefslist  #and return them to the program
             else:  #if we are unable to read good preference settings from the file we are supposed to have just written, there must be a great disturbance in the force
                 quit('Unexpected problem creating or reading new preferences file.')  #quitting for safety, as something must be wrong here
-        
+
 def parseprefs(prefsfile):  #this function does the actual reading of the preferences file
     import os
     if os.path.isfile(prefsfile):  #checks to make sure that the prefs file specified exists, otherwise skips directly to the final else statement and returns False (we read no prefs from no files)
@@ -412,7 +413,7 @@ def parseprefs(prefsfile):  #this function does the actual reading of the prefer
         return prefslist  #otherwise return the validated list
     else:  #this is where we go if the file passed into this function did not exist
         return False  #skip everything above and just return false, there was nothing to read or test in the file
-    
+
 def makeprefsfile(prefsfile):  #makes a new preferences file if the old one was not found (the status of the old one was determined in a higher subroutine)
     import os
     if os.path.isfile(prefsfile):  #checks to make sure that no preferences file exists (this avoids risk of overwriting something unintentionally and forces the user to delete the old file themselves if there was one)
@@ -437,7 +438,7 @@ def makeprefsfile(prefsfile):  #makes a new preferences file if the old one was 
             try:  #port gets a second test beyond just being blank or not
                 int(port)  #check if the input value can be converted to an integer
             except ValueError:  #if not, we don't accept the answer and ask for another
-                print('Port number must be an integer.')  
+                print('Port number must be an integer.')
                 port = False
     if not yesanswer('Default genome = ' + genome):
         genome = False
@@ -457,7 +458,7 @@ def makeprefsfile(prefsfile):  #makes a new preferences file if the old one was 
     output = open(prefsfile, 'w')  #creates and opens the preferences file for writing.  I could add error handling for this, but I would rather the user see any error messages that appear and the program quits
     output.write(allprefs)  #writes the already formed preferences string to the file
     output.close()  #closes the file  (because we did not set any different buffering for the file, Python does not purge the buffer and write the actual file until this step, I believe.  If we were writing a VCF with gigs of data, how would we want to do this differently?)
-    
+
 def main():
     stackshot = False #initializing a variable for how the user wants photographs taken
     singleshot = False #initializing another variable for another way the user might want photographs taken (at least one of these will be set to true before we start imaging)
@@ -505,7 +506,7 @@ def main():
         usage('Failed to communicate with IGV on "genome selection" command for line ' + linecount + '.')
         igv.close()
         quit()
-    print ('OK\nSetting the snapshot save directory on IGV...', end = '')    
+    print ('OK\nSetting the snapshot save directory on IGV...', end = '')
     if not cmdsetimagedirectory(directory, igv):  #sends the command to IGV to set the output directory for images to the appropriate one for this session
         usage('Failed to communicate with IGV when setting the snapshot directory.')
         igv.close()
@@ -532,7 +533,7 @@ def main():
     for locus in locuslist:
         linecount += 1  #increments the line counter
         firstshot = False  #initialize the Firstshot value to false
-        if not locus: #if the line is blank, ignore it entirely 
+        if not locus: #if the line is blank, ignore it entirely
             continue
         locusarray = clean(locus, badbams)
         if not locusarray:  #if clean returned a value of false due to a problem with the line
@@ -543,7 +544,7 @@ def main():
             continue
         if not cmdgotolocus(locusarray[0], igv): #We can have this here because IGV will keep the previous locus after a "new" command.  If it stops doing this, we have to move this call inside the inner loop and use a "break" command instead of a "continue". This subroutine will return a value of True if it executes successfully and gets no error message from IGV
                 print ('Error loading going to locus ' + locusarray[0] + ' see previous line for details.  Skipping to next locus.')  #so if false is returned, it will display an error message and try the next locus
-                continue #moves on to the next locus by forcing the loop to iterate without doing anything more 
+                continue #moves on to the next locus by forcing the loop to iterate without doing anything more
         if stackshot and (multibam(locusarray, badbams) or not singleshot):  #if the user selected to get group photos of multiple bam files at each locus it will do this (if the user selected both multi and single image outputs and the line only had a single valid bam file, this will be skipped as both the multi and single shots would look the same)
             print ('Processing locus ' + str(linecount) + ' of ' + str(len(locuslist)) + ' to take group photo.', end = ' \r')
             if not cmdnew(igv):  #clear the IGV screen
@@ -551,7 +552,7 @@ def main():
                 igv.close()
                 quit()
             for i in range(1, len(locusarray)):
-                if not locusarray[i]:  #if the element that should contain a bam file is just a blank 
+                if not locusarray[i]:  #if the element that should contain a bam file is just a blank
                     continue #skip everything and go on to the next
                 if locusarray[i] in badbams:  #note that this should not be engaged, as the clean function should keep a previously-known bad bamfile from even getting here
                     print('Skipped ' + locusarray[i] + ' on line ' + str(linecount) + ' (locus: ' + locusarray[0] + ') in group photo as it could not be opened previously.')
@@ -570,15 +571,15 @@ def main():
                     continue
                 if not firstshot and singleshot:
                     if cmdsaveimage(locusarray[i], locusarray[0], igv, nocollapse):
-                        firstshot = True                       
+                        firstshot = True
             if not cmdsaveimage('all', locusarray[0], igv, nocollapse):  #tells IGV to shoot the image
                 usage('Problem saving snapshot of ' + locusarray[0] + ' in ' + locusarray[i] + ' see previous line for details.\nPlease confirm that the directory /autoIGV/ exists and this script has access to write to it and create subdirectories.  Also try removing any non-word characters or whitespaces from your bam file name.')
                 igv.close()
                 quit()
-        if singleshot:        
+        if singleshot:
             for i in range(1, len(locusarray)):
                 print ('Processing locus ' + str(linecount) + ' of ' + str(len(locuslist)) + ' file number ' + str(i) + ' of ' + str(len(locusarray)-1) + '.', end = ' \r')
-                if not locusarray[i]:  #if the element that should contain a bam file is just a blank 
+                if not locusarray[i]:  #if the element that should contain a bam file is just a blank
                     continue #skip everything and go on to the next
                 if locusarray[i] in badbams:
                     print('Skipped ' + locusarray[i] + ' on line ' + str(linecount) + ' (locus: ' + locusarray[0] + ') for single photo as it could not be opened previously.')
@@ -610,6 +611,6 @@ def main():
     igv.close()  #close the connection to IGV when done
     print ('OK\nImages saved to ' + directory + '\nGoodbye.')
     quit()
-            
+
 main()
 
