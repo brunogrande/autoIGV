@@ -121,7 +121,7 @@ def usage(sin):  #This subroutine prints directions
 def connect(host, port):  #this subroutine creates the connection between the script and IGV
     import socket  #the library needed for the low-level network connection
     igv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  #creates a socket object called IGV
-    igv.settimeout(30)  #sets IGV to give a timeout error if a command goes unresponded to for more than 20 seconds
+    igv.settimeout(120)  #sets IGV to give a timeout error if a command goes unresponded to for more than 20 seconds
     print('Attempting to establish a connecting with IGV...', end = '')
     try:  #this statement contains an action that could cause a non-fatal exception to occur
         igv.connect((host, int(port)))  #actually creates the connection with IGV on the local system
